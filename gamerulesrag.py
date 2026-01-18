@@ -15,7 +15,11 @@ load_dotenv()
 # ─── Config ───────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Board Game Rules Assistant", layout="wide")
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # Set in .env file
+# Get API key from Streamlit secrets (cloud) or .env file (local)
+try:
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+except (KeyError, FileNotFoundError):
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 MODEL_NAME = "llama-3.3-70b-versatile"  # Free models: "llama-3.3-70b-versatile", "mixtral-8x7b-32768"
 
 # RAG Configuration
