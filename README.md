@@ -18,10 +18,9 @@
   <a href="https://github.com/adamcarlow/RAG-Chat-Bot/blob/main/LICENSE"><img src="https://img.shields.io/github/license/adamcarlow/RAG-Chat-Bot?style=flat-square" alt="License"/></a>
 </p>
 
-## Streamlit RAG Chatbot Interface]
+![Streamlit RAG Chatbot Interface](https://thepythoncode.com/media/articles/build-rag-chatbot-fastapi-openai-streamlit/img001.png)
 
-<img width="1766" height="795" alt="image" src="https://github.com/user-attachments/assets/f61def17-4e66-46f0-9fe1-b9c5ab081d6a" />
-
+> *Example of a similar Streamlit RAG PDF Q&A app interface — upload on the left, chat/answers on the right. (Replace this image with a screenshot of your own app!)*
 
 ## Table of Contents
 
@@ -80,20 +79,18 @@ This app implements a classic RAG pipeline:
    cd RAG-Chat-Bot
 
 2. Install dependencies:
-   ```bash
-    pip install -r requirements.txt
+
+pip install -r requirements.txt
 
 3. Add your Groq key (create .env file):
-  ```bash
-    echo "GROQ_API_KEY=your-api-key-here" > .env
-```
+
+echo "GROQ_API_KEY=your-api-key-here" > .env
 
 ## Usage
 
 Launch the app:
-```
+
 streamlit run gamerulesrag.py
-```
 
 Open http://localhost:8501 in your browser.
 
@@ -113,14 +110,11 @@ Example board game setup (Catan) — the kind of content your app can now answer
 "How do I win?"
 
 ## Configuration
-
 Edit these in gamerulesrag.py to tune performance:
-   ```bash
-    CHUNK_SIZE = 2000      # Characters per chunk
-    CHUNK_OVERLAP = 200    # Overlap between chunks
-    TOP_K_CHUNKS = 4       # Number of chunks to retrieve
-```
-## License
+CHUNK_SIZE = 2000      # Characters per chunk
+CHUNK_OVERLAP = 200    # Overlap between chunks
+TOP_K_CHUNKS = 4       # Number of chunks to retrieve
 
+## License
 MIT License
 Feel free to fork, modify, and share!

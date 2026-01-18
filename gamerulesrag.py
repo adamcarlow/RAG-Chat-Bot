@@ -97,6 +97,22 @@ def retrieve_relevant_chunks(vector_stores: dict, selected_games: list, question
 if "rulebooks" not in st.session_state:
     st.session_state.rulebooks = {}  # {game_name: vector_store}
 
+# Auto-load pre-included rulebooks
+RULEBOOKS_DIR = Path(__file__).parent / "rulebooks"
+if RULEBOOKS_DIR.exists() and not st.session_state.get("preloaded"):
+    embeddings = get_embeddings()
+    for pdf_file in RULEBOOKS_DIR.glob("*.pdf"):
+        game_name = pdf_file.stem.replace("_", " ").title()
+        if game_name not in st.session_state.rulebooks:
+            try:
+                chunks = load_and_chunk_pdf(pdf_file, game_name)
+                if chunks:
+                    vector_store = create_vector_store(chunks, embeddings)
+                    st.session_state.rulebooks[game_name] = vector_store
+            except Exception:
+                pass  # Skip files that can't be processed
+    st.session_state.preloaded = True
+
 # ─── UI ────────────────────────────────────────────────────────────────────
 
 # Header with board game theme
