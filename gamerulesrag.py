@@ -21,7 +21,7 @@ MODEL_NAME = "llama-3.3-70b-versatile"  # Free models: "llama-3.3-70b-versatile"
 # RAG Configuration
 CHUNK_SIZE = 2000  # Characters per chunk
 CHUNK_OVERLAP = 200  # Overlap between chunks
-TOP_K_CHUNKS = 4  # Number of relevant chunks to retrieve
+TOP_K_CHUNKS = 4  # Number of relevant chunks to retrieve per rulebook
 
 PROMPT_TEMPLATE = """\
 You are an expert board game rules specialist. Your job is to help players understand game rules, clarify confusing situations, and explain how to play.
@@ -30,7 +30,7 @@ When answering:
 - Be clear and precise about game mechanics
 - Use examples when helpful to illustrate rules
 - If a rule interaction is ambiguous, explain the most common interpretation
-- Reference specific sections or page numbers from the rulebook when possible
+- Reference the game name and specific sections when possible
 
 Use **only** the information from the provided rulebook context below.
 
@@ -54,10 +54,14 @@ def get_embeddings():
         encode_kwargs={'normalize_embeddings': True}
     )
 
-def load_and_chunk_pdf(pdf_path: str | Path):
-    """Load PDF and split into chunks."""
+def load_and_chunk_pdf(pdf_path: str | Path, game_name: str):
+    """Load PDF and split into chunks, adding game name to metadata."""
     loader = PyPDFLoader(str(pdf_path))
     documents = loader.load()
+
+    # Add game name to metadata
+    for doc in documents:
+        doc.metadata['game'] = game_name
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
@@ -74,10 +78,20 @@ def create_vector_store(chunks, embeddings):
     vector_store = FAISS.from_documents(chunks, embeddings)
     return vector_store
 
-def retrieve_relevant_chunks(vector_store, question: str, k: int = TOP_K_CHUNKS):
-    """Retrieve the most relevant chunks for a question."""
-    docs = vector_store.similarity_search(question, k=k)
-    return docs
+def retrieve_relevant_chunks(vector_stores: dict, selected_games: list, question: str, k: int = TOP_K_CHUNKS):
+    """Retrieve the most relevant chunks from selected games."""
+    all_docs = []
+
+    for game_name in selected_games:
+        if game_name in vector_stores:
+            docs = vector_stores[game_name].similarity_search(question, k=k)
+            all_docs.extend(docs)
+
+    return all_docs
+
+# Initialize session state for multiple rulebooks
+if "rulebooks" not in st.session_state:
+    st.session_state.rulebooks = {}  # {game_name: vector_store}
 
 # ─── UI ────────────────────────────────────────────────────────────────────
 
@@ -88,18 +102,18 @@ with col2:
     <div style="text-align: center;">
         <span style="font-size: 4rem;">🎲 🎯 🃏</span>
         <h1 style="margin-top: 0;">Board Game Rules Assistant</h1>
-        <p style="color: gray;">Upload a rulebook, ask questions, get answers instantly</p>
+        <p style="color: gray;">Upload rulebooks, ask questions, get answers instantly</p>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Sidebar with tips
+# Sidebar with tips and uploaded games
 with st.sidebar:
     st.markdown("### 🎮 How to Use")
     st.markdown("""
-    1. **Upload** your game's rulebook PDF
-    2. **Wait** for processing (chunking & embedding)
+    1. **Upload** one or more rulebook PDFs
+    2. **Select** which game(s) to query
     3. **Ask** any rules question
     4. **Get** instant answers
     """)
@@ -109,113 +123,132 @@ with st.sidebar:
     st.markdown("""
     - *"How do I set up the game?"*
     - *"What happens when I roll doubles?"*
-    - *"Can I trade on my first turn?"*
+    - *"Compare the victory conditions"*
     - *"How do I win?"*
     """)
 
     st.markdown("---")
-    st.markdown("### 🎲 Supported Games")
-    st.markdown("Any board game with a PDF rulebook!")
+    st.markdown("### 📚 Loaded Rulebooks")
+    if st.session_state.rulebooks:
+        for game in st.session_state.rulebooks.keys():
+            st.markdown(f"- {game}")
+    else:
+        st.markdown("*No rulebooks loaded yet*")
 
-# File uploader
-uploaded_file = st.file_uploader(
-    "Upload a game rulebook (PDF)",
+# File uploader - multiple files
+uploaded_files = st.file_uploader(
+    "Upload game rulebooks (PDF)",
     type=["pdf"],
-    help="Upload the PDF rulebook for any board game"
+    accept_multiple_files=True,
+    help="Upload one or more PDF rulebooks"
 )
 
-if uploaded_file is not None:
-    # Save uploaded file temporarily
+if uploaded_files:
     temp_dir = Path("temp_pdfs")
     temp_dir.mkdir(exist_ok=True)
 
-    temp_path = temp_dir / uploaded_file.name
+    embeddings = get_embeddings()
 
-    with open(temp_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
+    for uploaded_file in uploaded_files:
+        # Use filename without extension as game name
+        game_name = Path(uploaded_file.name).stem
 
-    # Create a unique key for this file to cache the vector store
-    file_key = f"{uploaded_file.name}_{uploaded_file.size}"
+        # Check if already processed
+        if game_name not in st.session_state.rulebooks:
+            temp_path = temp_dir / uploaded_file.name
 
-    # Check if we already processed this file
-    if "vector_store" not in st.session_state or st.session_state.get("file_key") != file_key:
+            with open(temp_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
 
-        # Step 1: Load and chunk the PDF
-        with st.spinner("📄 Loading and chunking PDF..."):
-            chunks = load_and_chunk_pdf(temp_path)
+            with st.spinner(f"📄 Processing {game_name}..."):
+                chunks = load_and_chunk_pdf(temp_path, game_name)
 
-        # Step 2: Load embedding model
-        with st.spinner("🧠 Loading embedding model..."):
-            embeddings = get_embeddings()
+                if not chunks:
+                    st.error(f"❌ Could not extract text from {game_name}. The PDF may be image-based or empty.")
+                    continue
 
-        # Step 3: Create vector store
-        with st.spinner("🔢 Creating embeddings and vector store..."):
-            vector_store = create_vector_store(chunks, embeddings)
+                vector_store = create_vector_store(chunks, embeddings)
+                st.session_state.rulebooks[game_name] = vector_store
 
-        # Store in session state
-        st.session_state.vector_store = vector_store
-        st.session_state.file_key = file_key
-        st.session_state.num_chunks = len(chunks)
+            st.success(f"✅ {game_name} loaded")
 
-    st.success("📖 Rulebook processed")
+# Show game selector and question input if we have rulebooks
+if st.session_state.rulebooks:
+    st.markdown("---")
 
-    # Show chunk info
-    with st.expander("📊 Processing Details"):
-        st.markdown(f"""
-        - **Chunks created:** {st.session_state.num_chunks}
-        - **Chunk size:** {CHUNK_SIZE} characters
-        - **Overlap:** {CHUNK_OVERLAP} characters
-        - **Embedding model:** all-MiniLM-L6-v2
-        - **Vector store:** FAISS
-        """)
+    # Game selector
+    st.markdown("### 🎯 Select Rulebook(s) to Query")
+    game_options = list(st.session_state.rulebooks.keys())
 
-    # Question input
-    st.markdown("### ❓ Ask a Rules Question")
-    question = st.text_input("Your question:",
-                            placeholder="How do I set up the game?",
-                            key="question_input",
-                            label_visibility="collapsed")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_games = st.multiselect(
+            "Select games:",
+            options=game_options,
+            default=[],
+            label_visibility="collapsed"
+        )
+    with col2:
+        if st.button("Select All"):
+            selected_games = game_options
+            st.rerun()
 
-    if question and question.strip():
-        if st.button("🎯 Get Answer", type="primary"):
+    if selected_games:
+        # Question input
+        st.markdown("### ❓ Ask a Rules Question")
+        question = st.text_input(
+            "Your question:",
+            placeholder="How do I set up the game?" if len(selected_games) == 1 else "Compare the setup for these games",
+            key="question_input",
+            label_visibility="collapsed"
+        )
 
-            # Step 1: Retrieve relevant chunks
-            with st.spinner("🔍 Finding relevant sections..."):
-                relevant_docs = retrieve_relevant_chunks(
-                    st.session_state.vector_store,
-                    question
-                )
-                context = "\n\n---\n\n".join([doc.page_content for doc in relevant_docs])
+        if question and question.strip():
+            if st.button("🎯 Get Answer", type="primary"):
 
-            # Step 2: Generate answer
-            with st.spinner("🎲 Generating answer..."):
-                llm = get_llm()
+                # Retrieve relevant chunks from selected games
+                with st.spinner("🔍 Finding relevant sections..."):
+                    relevant_docs = retrieve_relevant_chunks(
+                        st.session_state.rulebooks,
+                        selected_games,
+                        question
+                    )
 
-                prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
-                chain_input = {"context": context, "question": question}
-                formatted_prompt = prompt.format(**chain_input)
+                    # Format context with game names
+                    context_parts = []
+                    for doc in relevant_docs:
+                        game = doc.metadata.get('game', 'Unknown')
+                        context_parts.append(f"[{game}]\n{doc.page_content}")
+                    context = "\n\n---\n\n".join(context_parts)
 
-                try:
-                    response = llm.invoke(formatted_prompt)
-                    answer = response.content
+                # Generate answer
+                with st.spinner("🎲 Generating answer..."):
+                    llm = get_llm()
 
-                    st.markdown("### 📜 Answer")
-                    st.info(answer)
+                    prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
+                    chain_input = {"context": context, "question": question}
+                    formatted_prompt = prompt.format(**chain_input)
 
-                except Exception as e:
-                    st.error(f"Error while running model:\n{e}")
+                    try:
+                        response = llm.invoke(formatted_prompt)
+                        answer = response.content
 
-# Cleanup hint
+                        st.markdown("### 📜 Answer")
+                        st.info(answer)
+
+                    except Exception as e:
+                        st.error(f"Error while running model:\n{e}")
+    else:
+        st.warning("Please select at least one rulebook to query.")
+
+# Cleanup
 st.markdown("---")
-if st.button("🗑️ Clear uploaded rulebooks", help="Removes uploaded PDFs and clears cache"):
+if st.button("🗑️ Clear all rulebooks", help="Removes all uploaded PDFs and clears cache"):
     try:
         for file in Path("temp_pdfs").glob("*.pdf"):
             file.unlink()
-        if "vector_store" in st.session_state:
-            del st.session_state.vector_store
-        if "file_key" in st.session_state:
-            del st.session_state.file_key
-        st.success("Rulebooks and cache cleared!")
+        st.session_state.rulebooks = {}
+        st.success("All rulebooks cleared!")
         st.rerun()
     except Exception as e:
         st.warning(f"Could not delete some files: {e}")
