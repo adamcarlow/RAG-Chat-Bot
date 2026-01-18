@@ -30,17 +30,20 @@
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Pre-loaded Games](#pre-loaded-games)
 - [Example Questions](#example-questions)
 - [Configuration](#configuration)
 - [License](#license)
 
 ## Features
 
-- 📄 Upload any board game rulebook PDF
-- ❓ Ask natural language questions about rules, setup, and gameplay
-- 🔍 Accurate, context-aware answers via Retrieval-Augmented Generation (RAG)
-- ⚡ Fast & free inference using Groq's Llama 3.3 70B model
-- 🖥️ Clean, interactive Streamlit web interface
+- 📚 **9 Pre-loaded Rulebooks** — Catan, Monopoly, Risk, Chess, Checkers, Ticket to Ride, Scrabble, Game of Life, and Clue Junior ready to query
+- 📄 **Upload Your Own** — Add any board game rulebook PDF
+- 🎯 **Multi-Game Queries** — Select one or multiple rulebooks to search across
+- ❓ **Natural Language Q&A** — Ask questions about rules, setup, and gameplay
+- 🔍 **RAG-Powered Accuracy** — Context-aware answers via Retrieval-Augmented Generation
+- ⚡ **Fast & Free** — Powered by Groq's Llama 3.3 70B model
+- 🖥️ **Clean Interface** — Interactive Streamlit web app
 
 ## How It Works
 
@@ -102,12 +105,34 @@ Get rule-based answers!
 Catan Board Game Setup
 Example board game setup (Catan) — the kind of content your app can now answer questions about instantly.
 
+## Pre-loaded Games
+
+The app comes with 9 classic board game rulebooks ready to query:
+
+| Game | Description |
+|------|-------------|
+| Catan | Resource trading and settlement building |
+| Monopoly | Classic property trading game |
+| Risk | World domination strategy |
+| Chess | Classic strategy board game |
+| Checkers | Simple capture game |
+| Ticket to Ride | Train route building |
+| Scrabble | Word building game |
+| Game of Life | Life simulation board game |
+| Clue Junior | Mystery solving for kids |
+
 ## Example Questions
 
-"How do I set up the game?"
-"What happens when I roll doubles?"
-"Can I trade on my first turn?"
-"How do I win?"
+**Single Game:**
+- "How do I set up the game?"
+- "What happens when I roll doubles?"
+- "Can I trade on my first turn?"
+- "How do I win?"
+
+**Cross-Game Comparisons:**
+- "Compare the victory conditions between these games"
+- "Which game has the longest setup?"
+- "What are the differences in trading rules?"
 
 ## Configuration
 Edit these in gamerulesrag.py to tune performance:
