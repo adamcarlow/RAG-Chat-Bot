@@ -1,19 +1,18 @@
-# PDF Question Answering App
+# Board Game Rules Assistant
 
-A Streamlit web application that lets you ask questions about PDF documents using a local Llama 3.2 model via Ollama.
+A Streamlit web application that helps you understand board game rules by answering questions about uploaded rulebook PDFs, powered by xAI's Grok model.
 
 ## Features
 
-- Upload any PDF document
-- Ask natural language questions about the content
-- Get AI-powered answers using Llama 3.2 (3B)
-- Runs completely locally - no data leaves your computer
+- Upload any board game rulebook (PDF)
+- Ask natural language questions about rules, setup, and gameplay
+- Get clear, accurate answers powered by Grok
+- Example questions provided to help you get started
 
 ## Prerequisites
 
 - Python 3.8+
-- [Ollama](https://ollama.ai/) installed and running
-- Llama 3.2 model pulled: `ollama pull llama3.2:3b`
+- xAI API key (get one at https://console.x.ai)
 
 ## Installation
 
@@ -28,10 +27,9 @@ cd pdf-qa-app
 pip install -r requirements.txt
 ```
 
-3. Make sure Ollama is running with the Llama 3.2 model:
+3. Create a `.env` file with your xAI API key:
 ```bash
-ollama pull llama3.2:3b
-ollama serve
+echo "XAI_API_KEY=your-api-key-here" > .env
 ```
 
 ## Usage
@@ -43,23 +41,36 @@ streamlit run app.py
 
 Then open http://localhost:8501 in your browser.
 
-1. Upload a PDF file
-2. Type your question
+1. Upload a board game rulebook PDF
+2. Type your rules question
 3. Click "Get Answer"
+
+### Example Questions
+
+- "How do I set up the game?"
+- "What happens when I roll doubles?"
+- "Can I trade on my first turn?"
+- "How do I win?"
 
 ## How It Works
 
 1. PDF text is extracted using PyPDF
-2. Your question and the document context are sent to Llama 3.2 via Ollama
-3. The model generates an answer based only on the document content
+2. Your question and the rulebook context are sent to Grok via xAI's API
+3. The model generates an answer based only on the rulebook content
 
 ## Tech Stack
 
 - **Streamlit** - Web interface
 - **LangChain** - LLM orchestration
-- **Ollama** - Local LLM inference
-- **Llama 3.2 (3B)** - Language model
+- **xAI Grok** - Language model
 - **PyPDF** - PDF text extraction
+
+## Configuration
+
+You can change the model in `app.py`:
+```python
+MODEL_NAME = "grok-4-1-fast-reasoning"  # Options: "grok-4", "grok-3-latest", "grok-3-fast"
+```
 
 ## License
 

@@ -1,4 +1,5 @@
 streamlit
-langchain-ollama
+langchain-xai
 langchain-community
 pypdf
+python-dotenv
