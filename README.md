@@ -18,9 +18,10 @@
   <a href="https://github.com/adamcarlow/RAG-Chat-Bot/blob/main/LICENSE"><img src="https://img.shields.io/github/license/adamcarlow/RAG-Chat-Bot?style=flat-square" alt="License"/></a>
 </p>
 
-![Streamlit RAG Chatbot Interface](https://thepythoncode.com/media/articles/build-rag-chatbot-fastapi-openai-streamlit/img001.png)
+![Streamlit RAG Chatbot Interface]
+<img width="1766" height="795" alt="Screenshot 2026-01-18 at 12 24 28 PM" src="https://github.com/user-attachments/assets/ace7ae31-c597-400e-a803-da2c50e72d47" />
 
-> *Example of a similar Streamlit RAG PDF Q&A app interface — upload on the left, chat/answers on the right. (Replace this image with a screenshot of your own app!)*
+
 
 ## Table of Contents
 
@@ -83,18 +84,20 @@ This app implements a classic RAG pipeline:
 
 2. Install dependencies:
 
+```bash
 pip install -r requirements.txt
-
+```
 3. Add your Groq key (create .env file):
 
+```
 echo "GROQ_API_KEY=your-api-key-here" > .env
-
+```
 ## Usage
 
 Launch the app:
-
+```
 streamlit run gamerulesrag.py
-
+```
 Open http://localhost:8501 in your browser.
 
 Upload a board game rulebook PDF (e.g., Catan, Ticket to Ride, Monopoly)
@@ -136,10 +139,11 @@ The app comes with 9 classic board game rulebooks ready to query:
 
 ## Configuration
 Edit these in gamerulesrag.py to tune performance:
+```
 CHUNK_SIZE = 2000      # Characters per chunk
 CHUNK_OVERLAP = 200    # Overlap between chunks
 TOP_K_CHUNKS = 4       # Number of chunks to retrieve
-
+```
 ## License
 MIT License
 Feel free to fork, modify, and share!
